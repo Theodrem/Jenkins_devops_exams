@@ -52,7 +52,7 @@ pipeline {
                     curl -v http://localhost:8002/api/v1/casts/
 
                     echo "Cleaning containers..."
-                    docker-compose down
+                    // docker-compose down
                     '''
                 }
             }
