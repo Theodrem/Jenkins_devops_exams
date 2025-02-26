@@ -24,7 +24,8 @@ pipeline {
                     echo "Deleting containers.."
                     docker-compose down || true
 
-                    echo "Construction des images Docker avec docker-compose"
+                    echo "Docker build..."
+
                     docker-compose build
 
                     echo "Connect to DockerHub"
@@ -47,8 +48,8 @@ pipeline {
 
                     echo "Test api.."
                     sleep 10  
-                    curl http://localhost:8000/api/v1/movies
-                    curl http://localhost:8000/api/v1/casts
+                    curl http://localhost:8081/api/v1/movies
+                    curl http://localhost:8081/api/v1/casts
 
                     echo "Cleaning containers..."
                     docker-compose down
