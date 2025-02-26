@@ -142,7 +142,7 @@ pipeline {
             }
             steps {
                 script {
-                    if (env.BRANCH_NAME != 'origin/master') {
+                    if (env.BRANCH_NAME == 'origin/master') {
                         timeout(time: 15, unit: "MINUTES") {
                             input message: 'Valiate deployment to production ?', ok: 'Deploy'
                         }
