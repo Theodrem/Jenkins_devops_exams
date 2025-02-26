@@ -85,7 +85,7 @@ pipeline {
                     cp charts/values.yaml values.yml
                     sed -i "s+tag:.*+tag: ${MOVIE_TAG}+g" values.yml
                     echo "Deployment QA"
-                    helm upgrade --install movie-app charts --values=values.yml --namespace QA
+                    helm upgrade --install movie-app charts --values=values.yml --namespace qa
                     '''
                 }
             }
