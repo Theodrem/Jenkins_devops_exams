@@ -3,15 +3,10 @@ pipeline {
         DOCKER_ID = "the0drem1"
         MOVIE_TAG = "v.${BUILD_ID}.0"
         CAST_TAG = "v.${BUILD_ID}.0"
+        BRANCH_NAME = "${GIT_BRANCH}"
     }
     agent any
     stages {
-        stage('Checkout Code') {
-            steps {
-                git branch: 'master', url: 'https://github.com/theodrem/Jenkins_devops_exams.git'
-            }
-        }
-
         stage('Docker Build & Push') {
             environment {
                 DOCKER_PASS = credentials("DOCKER_HUB_PASS")
@@ -66,11 +61,21 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "Deployment movie-app on Dev"
+
                     echo "Updating image tag Helm"
                     cp charts/values.yaml values.yml
                     sed -i "s+tag:.*+tag: ${MOVIE_TAG}+g" values.yml
-                    echo "Deployment Dev"
+                    sed -i "s+targetPort:.*+targetPort: 8001+g" values.yml
+                    sed -i "s+repository:.*+repository: the0drem1/jenkins_devops_exams-movie_service+g" values.yml
                     helm upgrade --install movie-app charts --values=values.yml --namespace dev
+
+                    echo "Deployment cast-app on Dev"
+
+                    sed -i "s+tag:.*+tag: ${CAST_TAG}+g" values.yml
+                    sed -i "s+targetPort:.*+targetPort: 8002+g" values.yml
+                    sed -i "s+repository:.*+repository: the0drem1/jenkins_devops_exams-cast_service+g" values.yml
+                    helm upgrade --install cast-app charts --values=values.yml --namespace dev
                     '''
                 }
             }
@@ -110,11 +115,22 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "Deployment movie-app on Staging"
+
                     echo "Updating image tag Helm"
                     cp charts/values.yaml values.yml
                     sed -i "s+tag:.*+tag: ${MOVIE_TAG}+g" values.yml
+                    sed -i "s+targetPort:.*+targetPort: 8001+g" values.yml
+                    sed -i "s+repository:.*+repository: the0drem1/jenkins_devops_exams-movie_service+g" values.yml
                     echo "Deployment Staging"
                     helm upgrade --install movie-app charts --values=values.yml --namespace staging
+
+                    echo "Deployment cast-app on Staging"
+
+                    sed -i "s+tag:.*+tag: ${CAST_TAG}+g" values.yml
+                    sed -i "s+targetPort:.*+targetPort: 8002+g" values.yml
+                    sed -i "s+repository:.*+repository: the0drem1/jenkins_devops_exams-cast_service+g" values.yml
+                    helm upgrade --install cast-app charts --values=values.yml --namespace staging
                     '''
                 }
             }
@@ -126,16 +142,27 @@ pipeline {
             }
             steps {
                 script {
-                    timeout(time: 15, unit: "MINUTES") {
-                        input message: 'Valider le Deployment production ?', ok: 'Déployer'
+                    if (env.BRANCH_NAME == 'origin/master') {
+                        timeout(time: 15, unit: "MINUTES") {
+                            input message: 'Valiate deployment to production ?', ok: 'Deploy'
+                        }
+                        sh '''
+                        echo "Deployment movie-app on Production"
+
+                        echo "Updating image tag Helm"
+                        cp charts/values.yaml values.yml
+                        sed -i "s+tag:.*+tag: lastest+g" values.yml
+                        sed -i "s+targetPort:.*+targetPort: 8001+g" values.yml
+                        sed -i "s+repository:.*+repository: the0drem1/jenkins_devops_exams-movie_service+g" values.yml
+
+                        echo "Deployment cast-app on Production"
+                        helm upgrade --install movie-app charts --values=values.yml --namespace prod
+                        sed -i "s+tag:.*+tag: latest+g" values.yml
+                        sed -i "s+targetPort:.*+targetPort: 8002+g" values.yml
+                        sed -i "s+repository:.*+repository: the0drem1/jenkins_devops_exams-cast_service+g" values.yml
+                        helm upgrade --install cast-app charts --values=values.yml --namespace prod
+                        '''
                     }
-                    sh '''
-                    echo "Updating image tag Helm"
-                    cp charts/values.yaml values.yml
-                    sed -i "s+tag:.*+tag: ${MOVIE_TAG}+g" values.yml
-                    echo "Deployment Production"
-                    helm upgrade --install movie-app charts --values=values.yml --namespace prod
-                    '''
                 }
             }
         }
