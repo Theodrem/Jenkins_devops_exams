@@ -1,0 +1,115 @@
+pipeline {
+    environment {
+        DOCKER_ID = "the0drem1"
+        MOVIE_TAG = "v.${BUILD_ID}.0"
+        CAST_TAG = "v.${BUILD_ID}.0"
+    }
+    agent any
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'master', url: 'https://github.com/theodrem/Jenkins_devops_exams.git'
+            }
+        }
+
+        stage('Docker Build & Push') {
+            environment {
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS")
+            }
+            steps {
+                script {
+                    sh '''
+                    export MOVIE_TAG=${MOVIE_TAG}
+                    export CAST_TAG=${CAST_TAG}
+                    echo "Deleting containers.."
+                    docker-compose down || true
+
+                    echo "Docker build..."
+
+                    docker-compose build
+
+                    echo "Connect to DockerHub"
+                    docker login -u $DOCKER_ID -p $DOCKER_PASS
+
+                    echo "Push to DockerHub"
+                    docker push $DOCKER_ID/jenkins_devops_exams-movie_service:$MOVIE_TAG
+                    docker push $DOCKER_ID/jenkins_devops_exams-cast_service:$CAST_TAG
+                    '''
+                }
+            }
+        }
+
+        stage('Test Acceptance') {
+            steps {
+                script {
+                    sh '''
+                    echo "Running containers..."
+                    MOVIE_TAG=${MOVIE_TAG} CAST_TAG=${CAST_TAG} docker-compose up -d
+
+                    echo "Test api.."
+                    sleep 10  
+                    curl -v http://localhost:8001/api/v1/movies/
+                    curl -v http://localhost:8002/api/v1/casts/docs
+
+                    echo "Cleaning containers..."
+                    docker-compose down
+                    '''
+                }
+            }
+        }
+
+        stage('Dev deployment ') {
+            environment {
+                KUBECONFIG = credentials("config")
+            }
+            steps {
+                script {
+                    sh '''
+                    echo "Updating image tag Helm"
+                    cp charts/values.yaml values.yml
+                    sed -i "s+tag:.*+tag: ${MOVIE_TAG}+g" values.yml
+                    echo "Deployment Dev"
+                    helm upgrade --install movie-app charts --values=values.yml --namespace dev
+                    '''
+                }
+            }
+        }
+
+        stage('Staging deployment ') {
+            environment {
+                KUBECONFIG = credentials("config")
+            }
+            steps {
+                script {
+                    sh '''
+                    echo "Updating image tag Helm"
+                    cp charts/values.yaml values.yml
+                    sed -i "s+tag:.*+tag: ${MOVIE_TAG}+g" values.yml
+                    echo "Deployment Staging"
+                    helm upgrade --install movie-app charts --values=values.yml --namespace staging
+                    '''
+                }
+            }
+        }
+
+        stage('Production deployment ') {
+            environment {
+                KUBECONFIG = credentials("config")
+            }
+            steps {
+                script {
+                    timeout(time: 15, unit: "MINUTES") {
+                        input message: 'Valider le Deployment production ?', ok: 'Déployer'
+                    }
+                    sh '''
+                    echo "Updating image tag Helm"
+                    cp charts/values.yaml values.yml
+                    sed -i "s+tag:.*+tag: ${MOVIE_TAG}+g" values.yml
+                    echo "Deployment Production"
+                    helm upgrade --install movie-app charts --values=values.yml --namespace prod
+                    '''
+                }
+            }
+        }
+    }
+}
