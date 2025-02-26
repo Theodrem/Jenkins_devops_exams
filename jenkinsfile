@@ -8,9 +8,11 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                def current_branch = GIT_BRANCH.replaceAll('origin/', '')
+                script {
+                    def current_branch = GIT_BRANCH.replaceAll('origin/', '')
 
-                git branch: '${current_branch}', url: 'https://github.com/theodrem/Jenkins_devops_exams.git'
+                    git branch: '${current_branch}', url: 'https://github.com/theodrem/Jenkins_devops_exams.git'
+                }  
             }
         }
 
