@@ -26,7 +26,7 @@ services:
 
   cast_service:
     build: ./cast-service
-    image: the0drem1/jenkins_devops_exams-cast_service:${CAST_TAG}"
+    image: the0drem1/jenkins_devops_exams-cast_service:${CAST_TAG}
     command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     volumes:
       - ./cast-service/:/app/
