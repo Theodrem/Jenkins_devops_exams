@@ -43,6 +43,11 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "Running containers..."
+                    export MOVIE_TAG=${MOVIE_TAG}
+                    export CAST_TAG=${CAST_TAG}
+                    docker-compose down || true
+                    docker-compose up -d
                     echo "Test api.."
                     sleep 10  
                     curl -v http://localhost:8001/api/v1/movies/
