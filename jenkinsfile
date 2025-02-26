@@ -57,7 +57,6 @@ pipeline {
                 }
             }
         }
-
         stage('Dev deployment ') {
             environment {
                 KUBECONFIG = credentials("config")
@@ -74,7 +73,22 @@ pipeline {
                 }
             }
         }
-
+        stage('QA deployment ') {
+            environment {
+                KUBECONFIG = credentials("config")
+            }
+            steps {
+                script {
+                    sh '''
+                    echo "Updating image tag Helm"
+                    cp charts/values.yaml values.yml
+                    sed -i "s+tag:.*+tag: ${MOVIE_TAG}+g" values.yml
+                    echo "Deployment QA"
+                    helm upgrade --install movie-app charts --values=values.yml --namespace QA
+                    '''
+                }
+            }
+        }
         stage('Staging deployment ') {
             environment {
                 KUBECONFIG = credentials("config")
