@@ -19,11 +19,13 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    export MOVIE_TAG=${MOVIE_TAG}
+                    export CAST_TAG=${CAST_TAG}
                     echo "Deleting containers.."
                     docker-compose down || true
 
                     echo "Construction des images Docker avec docker-compose"
-                    MOVIE_TAG=${MOVIE_TAG} CAST_TAG=${CAST_TAG} docker-compose build
+                    docker-compose build
 
                     echo "Connect to DockerHub"
                     docker login -u $DOCKER_ID -p $DOCKER_PASS
