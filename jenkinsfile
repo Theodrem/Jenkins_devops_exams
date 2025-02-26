@@ -8,7 +8,8 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: "${env.BRANCH_NAME}" , url: 'https://github.com/theodrem/Jenkins_devops_exams.git'
+                echo "Branche actuelle : ${GIT_BRANCH}"
+                git branch: 'master', url: 'https://github.com/theodrem/Jenkins_devops_exams.git'
             }
         }
 
