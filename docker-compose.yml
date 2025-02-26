@@ -3,6 +3,7 @@ version: '3.7'
 services:
   movie_service:
     build: ./movie-service
+    image: the0drem1/jenkins_devops_exams-movie_service:${MOVIE_TAG}
     command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     volumes:
       - ./movie-service/:/app/
@@ -25,6 +26,7 @@ services:
 
   cast_service:
     build: ./cast-service
+    image: the0drem1/jenkins_devops_exams-cast_service:${CAST_TAG}
     command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     volumes:
       - ./cast-service/:/app/
@@ -47,7 +49,7 @@ services:
   nginx:
     image: nginx:latest
     ports:
-      - "8080:8080"
+      - "8081:8080"
     volumes:
       - ./nginx_config.conf:/etc/nginx/conf.d/default.conf
     depends_on:
